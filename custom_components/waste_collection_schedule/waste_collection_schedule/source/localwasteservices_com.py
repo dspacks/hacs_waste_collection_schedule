@@ -25,7 +25,11 @@ from waste_collection_schedule.exceptions import SourceArgumentNotFound, SourceA
 
 TITLE = "Local Waste Services (Central Ohio)"
 DESCRIPTION = "Source for official Local Waste Services service-guidelines pages."
+COUNTRY = "us"
 URL = "https://localwasteservices.com/services/residential-services"
+HOW_TO_GET_ARGUMENTS_DESCRIPTION = {
+    "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site.",
+}
 
 TEST_CASES = {
     "City of Gahanna - Monday": {

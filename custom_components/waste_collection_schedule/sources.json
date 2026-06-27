@@ -22631,6 +22631,12 @@
       "id": "hoover_al_us"
     },
     {
+      "title": "Local Waste Services (Central Ohio)",
+      "module": "localwasteservices_com",
+      "default_params": {},
+      "id": "localwasteservices_com"
+    },
+    {
       "title": "Louisville, Kentucky, USA",
       "module": "recyclecoach_com",
       "default_params": {

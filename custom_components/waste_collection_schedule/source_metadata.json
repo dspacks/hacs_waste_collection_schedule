@@ -6532,6 +6532,13 @@
     "howto": {},
     "urls": {}
   },
+  "localwasteservices_com": {
+    "docs_url": "https://github.com/dspacks/hacs_waste_collection_schedule/blob/feature/local-waste-provider/doc/source/localwasteservices_com.md",
+    "howto": {
+      "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site."
+    },
+    "urls": {}
+  },
   "apps_ci_minneapolis_mn_us": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/apps_ci_minneapolis_mn_us.md",
     "howto": {},
