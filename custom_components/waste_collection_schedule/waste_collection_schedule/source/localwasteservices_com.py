@@ -33,7 +33,7 @@ DESCRIPTION = "Source for official Local Waste Services service-guidelines pages
 COUNTRY = "us"
 URL = "https://localwasteservices.com/services/residential-services"
 HOW_TO_GET_ARGUMENTS_DESCRIPTION = {
-    "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site. For biweekly recycling, either choose the prompted recycling section or enter the first pickup date for your address.",
+    "en": "Use a Local Waste Services service-guidelines page if you know it (for Violet Township: https://localwasteservices.com/service-guidelines/violet-township). If you start from the residential-services directory page, enter the exact municipality name in community_name (for example, Violet Township). The form starts with text fields only; if the recycling PDF has multiple sections, submit the form and the next step may ask you to choose the correct recycling section. If you prefer, enter the first recycling pickup date for your address (for example, 2026-01-03).",
 }
 
 TEST_CASES = {
