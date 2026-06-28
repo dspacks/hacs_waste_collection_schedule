@@ -16,6 +16,7 @@ import datetime as dt
 import logging
 import re
 from collections.abc import Iterable
+from typing import cast
 from urllib.parse import urljoin
 
 import requests
@@ -196,13 +197,28 @@ def _parse_biweekly_pdf_text(pdf_text: str, default_year: int | None = None) -> 
 
 
 def _extract_pdf_text(pdf_bytes: bytes) -> str:
-    """Placeholder for future PDF parsing support.
+    """Extract text from a PDF using the best available parser.
 
-    The current MVP focuses on the common weekly service-guidelines pages.
-    Biweekly PDF-backed routes are not yet parsed in the live provider.
+    Home Assistant installs pdfminer.six via the integration manifest.
+    In local dev/test environments we also fall back to PyMuPDF (fitz) if
+    pdfminer isn't available.
     """
-    _ = pdf_bytes
-    return ""
+    try:
+        from io import BytesIO
+        from pdfminer.high_level import extract_text
+
+        return extract_text(BytesIO(pdf_bytes)) or ""
+    except Exception:
+        pass
+
+    try:
+        import fitz
+
+        with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+            return "\n".join(page.get_text() for page in doc)
+    except Exception:
+        _LOGGER.exception("Failed to extract PDF text for recycling schedule")
+        return ""
 
 
 class Source:
@@ -231,11 +247,11 @@ class Source:
             response.raise_for_status()
             parsed = _parse_service_page(response.text, service_url)
 
-            collection_day = parsed["collection_day"]
+            collection_day = cast(str | None, parsed["collection_day"])
             if not collection_day:
                 raise ValueError(f"Could not find collection day on {service_url}")
 
-            holidays = parsed["holiday_dates"]
+            holidays = cast(list[dt.date], parsed["holiday_dates"])
             today = dt.date.today()
             end_date = today + dt.timedelta(days=365)
             entries: list[Collection] = []
@@ -246,14 +262,15 @@ class Source:
                     Collection(date=pickup_date, t="Trash", icon=Icons.GENERAL_WASTE)
                 )
 
-            recycling_mode = parsed["recycling_mode"]
+            recycling_mode = cast(str | None, parsed["recycling_mode"])
             if recycling_mode == "weekly":
                 for pickup_date in trash_dates:
                     entries.append(
                         Collection(date=pickup_date, t="Recycling", icon=Icons.RECYCLING)
                     )
-            elif recycling_mode == "biweekly" and parsed["recycling_pdf_url"]:
-                pdf_response = session.get(parsed["recycling_pdf_url"], timeout=30)
+            elif recycling_mode == "biweekly" and cast(str | None, parsed["recycling_pdf_url"]):
+                recycling_pdf_url = cast(str, parsed["recycling_pdf_url"])
+                pdf_response = session.get(recycling_pdf_url, timeout=30)
                 pdf_response.raise_for_status()
                 pdf_text = _extract_pdf_text(pdf_response.content)
                 section_dates = _parse_biweekly_pdf_text(pdf_text)
