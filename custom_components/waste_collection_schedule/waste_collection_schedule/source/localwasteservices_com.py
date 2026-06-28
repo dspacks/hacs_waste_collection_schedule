@@ -22,14 +22,18 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from waste_collection_schedule import Collection, Icons
-from waste_collection_schedule.exceptions import SourceArgumentNotFound, SourceArgumentRequired
+from waste_collection_schedule.exceptions import (
+    SourceArgumentNotFound,
+    SourceArgumentNotFoundWithSuggestions,
+    SourceArgumentRequired,
+)
 
 TITLE = "Local Waste Services (Central Ohio)"
 DESCRIPTION = "Source for official Local Waste Services service-guidelines pages."
 COUNTRY = "us"
 URL = "https://localwasteservices.com/services/residential-services"
 HOW_TO_GET_ARGUMENTS_DESCRIPTION = {
-    "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site.",
+    "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site. For biweekly recycling, either choose the prompted recycling section or enter the first pickup date for your address.",
 }
 
 TEST_CASES = {
@@ -226,12 +230,14 @@ class Source:
         self,
         url: str | None = None,
         community_name: str | None = None,
+        recycling_section: str | None = None,
         recycling_start_date: dt.date | None = None,
     ):
         if url is None:
             raise SourceArgumentRequired("url", "official Local Waste Services page URL is required")
         self._url = url
         self._community_name = community_name
+        self._recycling_section = recycling_section
         self._recycling_start_date = recycling_start_date
 
     def fetch(self) -> list[Collection]:
@@ -280,8 +286,10 @@ class Source:
                 pdf_response.raise_for_status()
                 pdf_text = _extract_pdf_text(pdf_response.content)
                 section_dates = _parse_biweekly_pdf_text(pdf_text)
-                if self._recycling_start_date is not None:
-                    matched_section = next(
+
+                selected_section = self._recycling_section
+                if selected_section is None and self._recycling_start_date is not None:
+                    selected_section = next(
                         (
                             section_name
                             for section_name, dates in section_dates.items()
@@ -289,18 +297,31 @@ class Source:
                         ),
                         None,
                     )
-                    if matched_section is not None:
-                        section_dates = {matched_section: section_dates[matched_section]}
-                for section_name, dates in section_dates.items():
-                    for pickup_date in dates:
-                        entries.append(
-                            Collection(
-                                date=pickup_date,
-                                t="Recycling",
-                                icon=Icons.RECYCLING,
-                                location=section_name,
-                            )
+
+                if selected_section is None:
+                    if len(section_dates) > 1:
+                        raise SourceArgumentNotFoundWithSuggestions(
+                            "recycling_section",
+                            "multiple recycling sections were found",
+                            section_dates.keys(),
                         )
+                    selected_section = next(iter(section_dates), None)
+
+                if selected_section is None or selected_section not in section_dates:
+                    raise SourceArgumentNotFound(
+                        "recycling_section",
+                        selected_section if selected_section is not None else "",
+                    )
+
+                for pickup_date in section_dates[selected_section]:
+                    entries.append(
+                        Collection(
+                            date=pickup_date,
+                            t="Recycling",
+                            icon=Icons.RECYCLING,
+                            location=selected_section,
+                        )
+                    )
 
             order = {"Trash": 0, "Recycling": 1}
             return sorted(entries, key=lambda item: (item.date, order.get(item.type, 99), item.location or ""))

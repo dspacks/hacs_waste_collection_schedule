@@ -6535,7 +6535,7 @@
   "localwasteservices_com": {
     "docs_url": "https://github.com/dspacks/hacs_waste_collection_schedule/blob/feature/local-waste-provider/doc/source/localwasteservices_com.md",
     "howto": {
-      "en": "Start with https://localwasteservices.com/services/residential-services. In the community_name field, type the municipality name exactly as shown on that page (for example, Violet Township). If your community has biweekly recycling, add the first recycling pickup date for your address so the calendar can show only your alternating weeks."
+      "en": "Start with https://localwasteservices.com/services/residential-services. In the community_name field, type the municipality name exactly as shown on that page (for example, Violet Township). If your community has biweekly recycling, the flow may prompt you to choose a recycling_section from a dropdown; you can also enter the first recycling pickup date for your address if you prefer."
     },
     "urls": {}
   },

@@ -2,6 +2,8 @@ import os
 import sys
 from datetime import date
 
+import pytest
+
 sys.path.insert(
     0,
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "custom_components/waste_collection_schedule")),
@@ -139,31 +141,57 @@ def test_fetch_uses_biweekly_pdf_for_recycling_dates(monkeypatch):
     monkeypatch.setattr(lws, "_extract_pdf_text", lambda pdf_bytes: PDF_TEXT)
 
     source = lws.Source(url="https://localwasteservices.com/service-guidelines/violet-township")
+    with pytest.raises(lws.SourceArgumentNotFoundWithSuggestions) as exc:
+        source.fetch()
+
+    assert exc.value.argument == "recycling_section"
+    assert list(exc.value.suggestions) == [
+        "Refugee Road and North of Refugee Road Collection Days",
+        "South of Refugee Road Collection Days",
+    ]
+
+
+def test_fetch_uses_selected_biweekly_recycling_section(monkeypatch):
+    service_page = """
+    <html>
+      <body>
+        <p>Collection Day</p><p>Friday</p>
+        <p>Materials out by</p><p>6:00AM</p>
+        <h3>Holiday Schedule</h3>
+        <p>Memorial Day</p><p>Monday - 05/25/26</p>
+        <p>Recycling</p><p>All recyclable materials are collected biweekly</p>
+        <a href="https://example.com/Violet%20Twp%20-%202026%20Recycle%20Map.pdf">Recycle PDF</a>
+      </body>
+    </html>
+    """
+
+    fake_session = FakeSession([FakeResponse(text=service_page), FakeResponse(content=b"pdf-bytes")])
+
+    monkeypatch.setattr(lws.requests, "Session", lambda: fake_session)
+    monkeypatch.setattr(
+        lws,
+        "_build_weekly_pickup_dates",
+        lambda *args, **kwargs: [date(2026, 1, 2), date(2026, 1, 9)],
+    )
+    monkeypatch.setattr(lws, "_extract_pdf_text", lambda pdf_bytes: PDF_TEXT)
+
+    source = lws.Source(
+        url="https://localwasteservices.com/service-guidelines/violet-township",
+        recycling_section="Refugee Road and North of Refugee Road Collection Days",
+    )
     entries = source.fetch()
 
     recycling_entries = [entry for entry in entries if entry.type == "Recycling"]
-    assert [entry.type for entry in entries].count("Trash") == 2
-    assert len(recycling_entries) == 8
-    assert [entry.location for entry in recycling_entries] == [
-        "Refugee Road and North of Refugee Road Collection Days",
-        "South of Refugee Road Collection Days",
-        "Refugee Road and North of Refugee Road Collection Days",
-        "South of Refugee Road Collection Days",
-        "Refugee Road and North of Refugee Road Collection Days",
-        "South of Refugee Road Collection Days",
-        "Refugee Road and North of Refugee Road Collection Days",
-        "South of Refugee Road Collection Days",
-    ]
     assert [entry.date for entry in recycling_entries] == [
         date(2026, 1, 3),
-        date(2026, 1, 9),
         date(2026, 1, 16),
-        date(2026, 1, 23),
         date(2026, 1, 30),
-        date(2026, 2, 6),
         date(2026, 2, 13),
-        date(2026, 2, 20),
     ]
+    assert all(
+        entry.location == "Refugee Road and North of Refugee Road Collection Days"
+        for entry in recycling_entries
+    )
 
 
 def test_fetch_filters_biweekly_recycling_by_start_date(monkeypatch):
