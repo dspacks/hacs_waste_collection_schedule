@@ -222,11 +222,17 @@ def _extract_pdf_text(pdf_bytes: bytes) -> str:
 
 
 class Source:
-    def __init__(self, url: str | None = None, community_name: str | None = None):
+    def __init__(
+        self,
+        url: str | None = None,
+        community_name: str | None = None,
+        recycling_start_date: dt.date | None = None,
+    ):
         if url is None:
             raise SourceArgumentRequired("url", "official Local Waste Services page URL is required")
         self._url = url
         self._community_name = community_name
+        self._recycling_start_date = recycling_start_date
 
     def fetch(self) -> list[Collection]:
         with requests.Session() as session:
@@ -274,6 +280,17 @@ class Source:
                 pdf_response.raise_for_status()
                 pdf_text = _extract_pdf_text(pdf_response.content)
                 section_dates = _parse_biweekly_pdf_text(pdf_text)
+                if self._recycling_start_date is not None:
+                    matched_section = next(
+                        (
+                            section_name
+                            for section_name, dates in section_dates.items()
+                            if self._recycling_start_date in dates
+                        ),
+                        None,
+                    )
+                    if matched_section is not None:
+                        section_dates = {matched_section: section_dates[matched_section]}
                 for section_name, dates in section_dates.items():
                     for pickup_date in dates:
                         entries.append(
