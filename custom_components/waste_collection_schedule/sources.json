@@ -22633,7 +22633,9 @@
     {
       "title": "Local Waste Services (Central Ohio)",
       "module": "localwasteservices_com",
-      "default_params": {},
+      "default_params": {
+        "url": "https://localwasteservices.com/services/residential-services"
+      },
       "id": "localwasteservices_com"
     },
     {

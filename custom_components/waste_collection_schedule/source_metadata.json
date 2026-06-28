@@ -6535,13 +6535,8 @@
   "localwasteservices_com": {
     "docs_url": "https://github.com/dspacks/hacs_waste_collection_schedule/blob/feature/local-waste-provider/doc/source/localwasteservices_com.md",
     "howto": {
-      "en": "Enter the official Local Waste Services service-guidelines page URL. If you want to use the residential-services directory page instead, also provide the exact community name shown on the Local Waste Services site."
+      "en": "Start with https://localwasteservices.com/services/residential-services. In the community_name field, type the municipality name exactly as shown on that page (for example, Violet Township). If you use a direct service-guidelines page URL instead, community_name is not needed."
     },
-    "urls": {}
-  },
-  "apps_ci_minneapolis_mn_us": {
-    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/apps_ci_minneapolis_mn_us.md",
-    "howto": {},
     "urls": {}
   },
   "nyc_gov": {
